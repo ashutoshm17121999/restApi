@@ -50,6 +50,21 @@ class Order extends Injectable
             // die();
             if (isset($products)) {
                 $this->mongo->orders->insertOne($data);
+                $quantity = $products->quantity - $data['quantity'];
+                // print_r($quantity);
+                // die;
+                $this->mongo->product->updateOne(['id' => $data['prod_id']], ['$set' =>['quantity'=> $quantity]]);
+                
+                /**
+                 * Here event is fire
+                 */
+                $postArr = array(
+                    'quantity' => $quantity,
+                    'id' => $data['prod_id']
+                );
+                $eventmanager = $this->events;
+                
+                $eventmanager->fire("myevent:reducePlaceOrder", $this, $postArr);
             } else {
                 $data = ["status" => 404, "data" => "product not found"];
                 return $response->setJSONContent($data)->send();
